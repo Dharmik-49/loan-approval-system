@@ -2,9 +2,10 @@ import streamlit as st
 import requests
 
 # Page Configuration
-st.set_page_config(page_title="AI Loan Officer", page_icon="🏦")
+st.set_page_config(page_title="Aura Finance AI", page_icon="🏦")
+st.title("Aura Finance: Smart Loan Approval System 🏦🤖")
 
-st.title("🏦 Smart Loan Approval System")
+
 st.markdown("Enter the applicant's details below to get an AI-powered credit decision.")
 
 # Sidebar for additional info
