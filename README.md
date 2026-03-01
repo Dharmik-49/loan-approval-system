@@ -25,11 +25,11 @@
 ```bash
 git clone [https://github.com/your-username/aura-finance.git](https://github.com/your-username/aura-finance.git)
 cd aura-finance
-
+```
 2. Create a Virtual Environment (Recommended)
 This keeps your project dependencies isolated from your global Python installation:
 
-Bash
+```Bash
 # For Windows
 python -m venv venv
 venv\Scripts\activate
@@ -37,11 +37,13 @@ venv\Scripts\activate
 # For Mac/Linux
 python3 -m venv venv
 source venv/bin/activate
+```
 3. Install Required Dependencies
 Install the Machine Learning, Web, and AI libraries using the requirements file:
 
-Bash
+```Bash
 pip install -r requirements.txt
+```
 4. Setup Environment Variables
 The "AI Loan Officer" requires a Google Gemini API Key.
 
@@ -59,8 +61,9 @@ Aura Finance operates with a Microservices Architecture, requiring two separate 
 Step 1: Start the Backend (API)
 In your first terminal, run:
 
-Bash
+```Bash
 python main.py
+```
 Note: The system checks for model.pkl. If not found, it automatically trains the Random Forest model using the weighted logic.
 
 Status: Wait until you see Uvicorn running on http://0.0.0.0:8000.
@@ -68,8 +71,9 @@ Status: Wait until you see Uvicorn running on http://0.0.0.0:8000.
 Step 2: Start the Frontend (UI)
 In a second terminal, run:
 
-Bash
+```Bash
 streamlit run app.py
+```
 Note: A browser window will open automatically. Input applicant data to see the ML model and Gemini AI generate a decision and explanation in real-time.
 
 📈 Decision Outcomes
