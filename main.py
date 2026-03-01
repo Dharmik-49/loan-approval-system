@@ -1,9 +1,11 @@
+from dotenv import load_dotenv
+load_dotenv()
 import pickle
 import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 app = FastAPI()
 
