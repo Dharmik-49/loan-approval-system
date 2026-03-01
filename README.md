@@ -51,7 +51,8 @@ Create a new file named .env in the root folder.
 
 Paste your key inside like this:
 
-Code snippet
+Code snippet:-
+
 GOOGLE_API_KEY=your_actual_api_key_here
 
 💻 How to Run the Application
