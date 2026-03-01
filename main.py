@@ -1,15 +1,19 @@
-from dotenv import load_dotenv
-load_dotenv()
 import pickle
 import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+
+# --- NEW: Import Google GenAI ---
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
+
+# Load environment variables (gets your GOOGLE_API_KEY)
+load_dotenv()
 
 app = FastAPI()
 
-# 1. Load the model from your Desktop folder
+# 1. Load the ML model
 try:
     with open("model.pkl", "rb") as f:
         model_bundle = pickle.load(f)
@@ -25,42 +29,60 @@ class LoanData(BaseModel):
     requested_amount: float
     employment_years: int
 
-# 3. LangChain Setup (Set your OPENAI_API_KEY in environment)
-llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
-
+# 3. LangChain Setup for Gemini
+# We use gemini-1.5-flash as it is fast, highly capable, and has a great free tier
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.7)
+# --- UPDATED PROMPT TEMPLATE ---
 template = """
 You are a professional Loan Officer. Based on the following data:
-- ML Approval Status: {status} (1=Approved, 0=Rejected)
-- ML Suggested Max Loan: ${suggested_amt}
+- Application Status: {status} (Approved, Rejected, or Counter-Offer)
+- Amount Requested: ${requested_amt}
+- Max Approved Amount: ${suggested_amt}
 - Applicant Income: ${income}
 - Credit Score: {credit_score}
 
-Provide a polite, concise explanation to the applicant about why they were approved or rejected. 
-If approved, mention the limit. If rejected, give one tip to improve.
+Provide a polite, concise explanation to the applicant.
+- If "Approved": Congratulate them and confirm the requested amount.
+- If "Counter-Offer": Politely explain that the requested amount is too high based on their current income-to-loan ratio, but explicitly offer them the "Max Approved Amount" instead.
+- If "Rejected": Explain why (e.g., credit score is too low) and give one actionable tip to improve.
 """
 prompt = PromptTemplate.from_template(template)
 
+# --- UPDATED BUSINESS LOGIC ---
 @app.post("/analyze-loan")
 async def analyze_loan(data: LoanData):
-    # Prepare data for ML model
     features = [[data.income, data.credit_score, data.requested_amount, data.employment_years]]
     
-    # Get ML Predictions
-    status_pred = int(clf.predict(features)[0])
-    amt_pred = round(float(regr.predict(features)[0]), 2)
+    # 1. Get the absolute max the model thinks they can afford
+    max_safe_amount = round(float(regr.predict(features)[0]), 2)
     
-    # LangChain Reasoning
+    # 2. Smart Business Logic
+    if data.credit_score < 600:
+        # Hard reject for bad credit
+        final_status = "Rejected"
+        offered_amount = 0
+    elif data.requested_amount <= max_safe_amount:
+        # Fully approved for what they asked
+        final_status = "Approved"
+        offered_amount = data.requested_amount
+    else:
+        # The Counter-Offer (They asked for too much, but we can give them the max_safe_amount)
+        final_status = "Counter-Offer"
+        offered_amount = max_safe_amount
+    
+    # 3. Let Gemini explain the logic beautifully
     chain = prompt | llm
     ai_explanation = chain.invoke({
-        "status": status_pred,
-        "suggested_amt": amt_pred,
+        "status": final_status,
+        "requested_amt": data.requested_amount,
+        "suggested_amt": offered_amount,
         "income": data.income,
         "credit_score": data.credit_score
     })
 
     return {
-        "decision": "Approved" if status_pred == 1 else "Rejected",
-        "max_amount": amt_pred if status_pred == 1 else 0,
+        "decision": final_status,
+        "max_amount": offered_amount,
         "explanation": ai_explanation.content
     }
 
